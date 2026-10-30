@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A get-to-know-you party quiz: answer 10 questions, then find your friends and enemies.">
+<title>Friends and Enemies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;600;700&family=Permanent+Marker&display=swap">
+<style>
+  html { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; }
+  [hidden] { display: none !important; }
+  /* Layout: one narrow column like a phone screen. Home is a party name tag, quiz is one question at a time,
+     results split into a blue Friends side and a red Enemies side. */
+  :root {
+    --paper: #eef0f6;
+    --card: #ffffff;
+    --ink: #191c2b;
+    --muted: #5d6378;
+    --line: #d5d9e6;
+    --friend: #2457d6;
+    --friend-soft: #e1e8fb;
+    --enemy: #cf2a3a;
+    --enemy-soft: #fbe3e5;
+    --on-accent: #ffffff;
+    --display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+    --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+    --marker: "Permanent Marker", "Comic Sans MS", cursive;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #11131c; --card: #1b1e2b; --ink: #eceef6; --muted: #9aa0b6; --line: #2d3142;
+      --friend: #7598ff; --friend-soft: #1f2a4d; --enemy: #ff6270; --enemy-soft: #45202a; --on-accent: #11131c;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #11131c; --card: #1b1e2b; --ink: #eceef6; --muted: #9aa0b6; --line: #2d3142;
+    --friend: #7598ff; --friend-soft: #1f2a4d; --enemy: #ff6270; --enemy-soft: #45202a; --on-accent: #11131c;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+    padding-block: 28px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  #app { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+  h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; line-height: 1.05; }
+  h1 { font-size: clamp(2.6rem, 11vw, 4.2rem); font-weight: 800; letter-spacing: -0.02em; }
+  h1 .f { color: var(--friend); }
+  h1 .e { color: var(--enemy); }
+  h1 .and { display: block; font-family: var(--body); font-weight: 600; font-size: 0.32em; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--muted); margin-block: 6px; }
+  h2 { font-size: 1.6rem; font-weight: 800; }
+  h3 { font-size: 1.15rem; font-weight: 800; }
+  p { margin: 0; }
+  .muted { color: var(--muted); }
+  .label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+  /* status line */
+  .status { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); flex-wrap: wrap; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+  .status[data-mode="shared"] .dot { background: #1fa45b; box-shadow: 0 0 0 3px color-mix(in srgb, #1fa45b 25%, transparent); }
+  .status[data-mode="local"] .dot { background: var(--muted); }
+
+  /* how to play */
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: s; }
+  .steps li { display: flex; gap: 12px; align-items: baseline; counter-increment: s; }
+  .steps li::before { content: counter(s); font-family: var(--display); font-weight: 800; color: var(--muted);
+                      min-width: 1.2em; font-variant-numeric: tabular-nums; }
+
+  /* name tag */
+  .tag { background: var(--card); border: 2px solid var(--enemy); border-radius: 14px; overflow: hidden;
+         box-shadow: 0 10px 30px -18px rgba(0,0,0,.45); transform: rotate(-1.2deg); }
+  .tag-top { background: var(--enemy); color: var(--on-accent); text-align: center; padding-block: 10px 8px; }
+  .tag-top .hello { display: block; font-family: var(--display); font-weight: 800; font-size: 2rem; letter-spacing: 0.08em; line-height: 1; }
+  .tag-top .sub { font-weight: 600; font-size: 0.95rem; }
+  .tag input { width: 100%; border: none; background: transparent; color: var(--ink); text-align: center;
+               font-family: var(--marker); font-size: clamp(1.8rem, 8vw, 2.6rem); padding: 18px 12px 22px; }
+  .tag input::placeholder { color: var(--line); }
+  .tag input:focus { outline: none; }
+  .tag:focus-within { box-shadow: 0 0 0 4px color-mix(in srgb, var(--enemy) 30%, transparent), 0 10px 30px -18px rgba(0,0,0,.45); }
+
+  /* buttons */
+  button { font: inherit; cursor: pointer; }
+  .btn { border: none; border-radius: 999px; padding: 14px 26px; font-weight: 700; font-size: 1.05rem;
+         background: var(--ink); color: var(--paper); transition: transform .1s; }
+  .btn:active { transform: translateY(2px); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--line); }
+  .btn.danger { background: var(--enemy); color: var(--on-accent); }
+  .btn.small { padding: 8px 16px; font-size: 0.9rem; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button:focus-visible, select:focus-visible { outline: 3px solid var(--friend); outline-offset: 3px; }
+
+  /* player chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.9rem; }
+  .chip.me { border-color: var(--ink); font-weight: 700; }
+
+  /* quiz */
+  .progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .progress span { display: block; height: 100%; background: var(--ink); transition: width .25s; }
+  .qhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .question { font-family: var(--display); font-weight: 800; font-size: clamp(1.8rem, 7vw, 2.4rem); line-height: 1.1; text-wrap: balance; }
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 480px) { .answers { grid-template-columns: 1fr; } }
+  .answer { text-align: left; background: var(--card); color: var(--ink); border: 2px solid var(--line); border-radius: 14px;
+            padding: 16px; font-weight: 600; font-size: 1.02rem; display: flex; gap: 12px; align-items: flex-start; min-height: 72px; }
+  .answer .key { font-family: var(--display); font-weight: 800; color: var(--muted); }
+  .answer:hover { border-color: var(--ink); }
+  .answer[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+  .answer[aria-pressed="true"] .key { color: var(--paper); }
+
+  /* results */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .split { grid-template-columns: 1fr; } }
+  .side { border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .side.friends { background: var(--friend-soft); }
+  .side.enemies { background: var(--enemy-soft); }
+  .side h3 { font-size: 1.4rem; }
+  .side.friends h3 { color: var(--friend); }
+  .side.enemies h3 { color: var(--enemy); }
+  .match { background: var(--card); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .match-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .match .who { font-family: var(--marker); font-size: 1.35rem; line-height: 1.2; overflow-wrap: anywhere; }
+  .match .pct { font-family: var(--display); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+  .friends .pct { color: var(--friend); }
+  .enemies .pct { color: var(--enemy); }
+  .match .starter { font-size: 0.9rem; color: var(--muted); }
+  .empty { font-size: 0.92rem; color: var(--muted); }
+
+  .everyone { display: grid; gap: 8px; }
+  .bar-row { display: grid; grid-template-columns: minmax(0, 9rem) 1fr 3rem; gap: 10px; align-items: center; font-size: 0.95rem; }
+  .bar-row .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .bar span { display: block; height: 100%; border-radius: 99px; }
+  .bar-row .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  select { font: inherit; padding: 8px 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--card); color: var(--ink); max-width: 100%; }
+  .note { font-size: 0.88rem; color: var(--muted); }
+  .error { color: var(--enemy); font-weight: 600; font-size: 0.92rem; }
+
+  .pop { animation: pop .3s ease-out; }
+  @keyframes pop { from { transform: translateY(6px); opacity: .4; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .pop { animation: none; } .progress span, .btn { transition: none; } .tag { transform: none; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const QUESTIONS = [
+  { topic: "Weekend",  q: "Your perfect Friday night?",            a: ["Couch, snacks and a movie", "Dinner with a few friends", "A big loud party", "Spontaneous road trip"] },
+  { topic: "Food",     q: "Pineapple on pizza?",                    a: ["Absolutely not", "Only if someone else orders it", "Sure, why not", "Best topping ever"] },
+  { topic: "Sleep",    q: "When are you at your best?",             a: ["Up before sunrise", "Mid-morning", "Late at night", "3 a.m. and wide awake"] },
+  { topic: "Travel",   q: "Dream vacation?",                        a: ["Quiet cabin in the woods", "Lazy week at the beach", "Big city, packed schedule", "One-way ticket, no plan"] },
+  { topic: "Texting",  q: "How fast do you text back?",             a: ["Instantly", "Within the hour", "Whenever I remember", "I leave people on read for days"] },
+  { topic: "Planning", q: "How do you plan a trip?",                a: ["Spreadsheet, every hour planned", "A rough list of must-dos", "Book the flight, figure out the rest", "Plans? I just show up"] },
+  { topic: "Music",    q: "You get the aux. What's playing?",       a: ["Chill acoustic", "Throwbacks only", "Whatever's on the charts", "Bass loud enough to shake the walls"] },
+  { topic: "Pets",     q: "Pick your pet situation.",               a: ["No pets, thanks", "A low-key cat", "A dog that goes everywhere with me", "A whole farm"] },
+  { topic: "Movies",   q: "It's your pick for movie night.",        a: ["A documentary", "A good drama", "A comedy", "The scariest horror movie we can find"] },
+  { topic: "Games",    q: "How competitive are you at game night?", a: ["Just here for the snacks", "Playing for fun", "I play to win", "I have flipped a board before"] },
+];
+const N = QUESTIONS.length;
+const KEYS = ["A", "B", "C", "D"];
+
+// ---------- state ----------
+const state = { screen: "home", name: "", answers: [], q: 0, viewing: null };
+let mode = "connecting";          // "connecting" | "shared" | "local"
+let db = null, user = null, canReset = false;
+let sharedPlayers = [];
+let localPlayers = load("fe-local-players", []);
+let mine = load("fe-mine", []);   // player ids created on this device
+let modeNote = "";
+let loadNote = "";
+let saving = false, saveError = "";
+let confirmingReset = false;
+
+function load(key, fallback) {
+  try { const v = JSON.parse(localStorage.getItem(key)); return v ?? fallback; } catch { return fallback; }
+}
+function persist(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
+
+function players() { return mode === "shared" ? sharedPlayers : localPlayers; }
+
+function clean(id, d) {
+  if (!d || typeof d.name !== "string" || !Array.isArray(d.answers) || d.answers.length !== N) return null;
+  if (!d.answers.every(x => Number.isInteger(x) && x >= 0 && x <= 3)) return null;
+  return { id, name: d.name.trim().slice(0, 24) || "Someone", answers: d.answers.slice(), at: Number(d.at) || 0 };
+}
+
+// ---------- scoring ----------
+function compat(a, b) {
+  let s = 0;
+  for (let i = 0; i < N; i++) s += 1 - Math.abs(a[i] - b[i]) / 3;
+  return Math.round((s / N) * 100);
+}
+function friendStarter(me, other) {
+  const same = [];
+  for (let i = 0; i < N; i++) if (me.answers[i] === other.answers[i]) same.push(i);
+  if (!same.length) {
+    let best = 0;
+    for (let i = 1; i < N; i++) if (Math.abs(me.answers[i] - other.answers[i]) < Math.abs(me.answers[best] - other.answers[best])) best = i;
+    return `Closest on ${QUESTIONS[best].topic.toLowerCase()}. Start there.`;
+  }
+  // a shared extreme answer makes the best conversation
+  same.sort((x, y) => extremity(me.answers[y]) - extremity(me.answers[x]));
+  const i = same[0];
+  return `You both said "${QUESTIONS[i].a[me.answers[i]]}" (${QUESTIONS[i].topic}).`;
+}
+function extremity(v) { return Math.abs(v - 1.5); }
+function enemyStarter(me, other) {
+  let worst = 0;
+  for (let i = 1; i < N; i++) if (Math.abs(me.answers[i] - other.answers[i]) > Math.abs(me.answers[worst] - other.answers[worst])) worst = i;
+  const q = QUESTIONS[worst];
+  return `${q.topic}: you said "${q.a[me.answers[worst]]}", they said "${q.a[other.answers[worst]]}".`;
+}
+
+// ---------- tiny DOM helper ----------
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return el;
+}
+
+const app = document.getElementById("app");
+
+// ---------- screens ----------
+function render() {
+  app.replaceChildren();
+  if (state.screen === "quiz") return renderQuiz();
+  if (state.screen === "results") return renderResults();
+  renderHome();
+}
+
+function statusLine() {
+  const count = players().length;
+  const el = h("div", { class: "status", "data-mode": mode, id: "status" }, h("span", { class: "dot" }));
+  let text;
+  if (mode === "connecting") text = "Connecting to the game…";
+  else if (mode === "shared") text = `Live game · ${count} ${count === 1 ? "player" : "players"} so far`;
+  else text = `Playing on this device · ${count} ${count === 1 ? "player" : "players"} so far`;
+  el.append(h("span", { text }));
+  return el;
+}
+
+function renderHome() {
+  const nameInput = h("input", {
+    id: "player-name", type: "text", maxlength: "24", autocomplete: "off", placeholder: "Your name",
+    "aria-label": "Your name", value: state.name,
+    oninput: e => { state.name = e.target.value; startBtn.disabled = !state.name.trim(); },
+    onkeydown: e => { if (e.key === "Enter" && state.name.trim()) start(); },
+  });
+  const startBtn = h("button", { class: "btn", id: "start", onclick: start, disabled: !state.name.trim() }, "Start the quiz");
+  const myPlayers = players().filter(p => mine.includes(p.id));
+
+  app.append(
+    h("header", { class: "pop" },
+      h("h1", {}, h("span", { class: "f" }, "Friends"), h("span", { class: "and" }, "and"), h("span", { class: "e" }, "Enemies"))),
+    statusLine(),
+    h("ol", { class: "steps" },
+      h("li", {}, "Write your name on the tag."),
+      h("li", {}, `Answer ${N} quick questions about what you like.`),
+      h("li", {}, "See who answered most like you (friends) and least like you (enemies). Then go find them and talk.")),
+    h("div", { class: "tag" },
+      h("div", { class: "tag-top" }, h("span", { class: "hello" }, "HELLO"), h("span", { class: "sub" }, "my name is")),
+      nameInput),
+    h("div", { class: "row" },
+      startBtn,
+      myPlayers.length ? h("button", { class: "btn ghost", onclick: () => { state.viewing = myPlayers[myPlayers.length - 1].id; go("results"); } }, "See my results") : null),
+    modeNote ? h("p", { class: "note", text: modeNote }) : null,
+    playersCard(),
+  );
+}
+
+function playersCard() {
+  const list = players();
+  const card = h("section", { class: "card", id: "players-card" },
+    h("div", { class: "label" }, "Who's playing"));
+  if (loadNote) card.append(h("p", { class: "note", text: loadNote }));
+  if (!list.length) {
+    card.append(h("p", { class: "empty" }, mode === "connecting" ? "Loading players…" : "No one has played yet. Be the first."));
+  } else {
+    card.append(h("div", { class: "chips" }, list.map(p => h("span", { class: "chip" + (mine.includes(p.id) ? " me" : ""), text: p.name }))));
+  }
+  if (canReset && list.length) card.append(resetControls());
+  return card;
+}
+
+function resetControls() {
+  if (!confirmingReset) {
+    return h("div", { class: "row" }, h("button", { class: "btn ghost small", onclick: () => { confirmingReset = true; refresh(); } }, "Reset game"));
+  }
+  const n = players().length;
+  return h("div", { class: "row" },
+    h("span", { class: "note", text: `Delete all ${n} players and start over?` }),
+    h("button", { class: "btn danger small", onclick: resetGame }, "Yes, reset"),
+    h("button", { class: "btn ghost small", onclick: () => { confirmingReset = false; refresh(); } }, "Cancel"));
+}
+
+function start() {
+  if (!state.name.trim()) return;
+  state.name = state.name.trim().slice(0, 24);
+  state.answers = [];
+  state.q = 0;
+  saveError = "";
+  go("quiz");
+}
+
+function renderQuiz() {
+  const i = state.q;
+  const Q = QUESTIONS[i];
+  app.append(
+    h("div", { class: "qhead" },
+      h("span", { class: "label" }, `${state.name} · ${Q.topic}`),
+      h("span", { class: "label" }, `Question ${i + 1} of ${N}`)),
+    h("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(N), "aria-valuenow": String(i) },
+      h("span", { style: `width:${(i / N) * 100}%` })),
+    h("p", { class: "question pop", id: "question" }, Q.q),
+    h("div", { class: "answers" },
+      Q.a.map((text, k) => h("button", {
+        class: "answer", "aria-pressed": String(state.answers[i] === k),
+        onclick: () => choose(k),
+      }, h("span", { class: "key" }, KEYS[k]), h("span", {}, text)))),
+    h("div", { class: "row" },
+      h("button", { class: "btn ghost small", onclick: back }, i === 0 ? "Change name" : "Back"),
+      saving ? h("span", { class: "note" }, "Saving your answers…") : null,
+      saveError ? h("span", { class: "error", text: saveError }) : null),
+  );
+  const first = app.querySelector(".answer");
+  if (first && document.activeElement === document.body) first.focus({ preventScroll: true });
+}
+
+function choose(k) {
+  if (saving) return;
+  state.answers[state.q] = k;
+  if (state.q < N - 1) { state.q++; render(); }
+  else finish();
+}
+function back() {
+  if (saving) return;
+  if (state.q === 0) go("home");
+  else { state.q--; render(); }
+}
+
+async function finish() {
+  saving = true; saveError = ""; render();
+  const body = { name: state.name, answers: state.answers.slice(0, N), at: Date.now(), v: 1 };
+  try {
+    const id = await savePlayer(body);
+    mine.push(id); persist("fe-mine", mine);
+    state.viewing = id;
+    state.name = "";
+    saving = false;
+    go("results");
+  } catch (e) {
+    saving = false;
+    saveError = e && e.code === "quota_exceeded"
+      ? "The game is full. Ask the host to reset it, then try again."
+      : "Couldn't save your answers. Check your connection and tap your last answer again.";
+    render();
+  }
+}
+
+async function savePlayer(body) {
+  if (mode === "connecting") await connecting;
+  if (mode === "shared") {
+    const ref = db.collection("players").doc();
+    try {
+      await ref.set(body);
+      if (!sharedPlayers.some(p => p.id === ref.id)) sharedPlayers = [...sharedPlayers, clean(ref.id, body)];
+      return ref.id;
+    } catch (e) {
+      if (e && e.code === "unavailable") { await wait(600 + Math.random() * 600); await ref.set(body); return ref.id; }
+      if (!(e && (e.code === "invalid_argument" || e.code === "not_granted"))) throw e;
+      // This account can't write to the shared game: fall back to this device.
+      switchToLocal("Your account can view this game but can't add answers to it, so this device keeps its own player list.");
+    }
+  }
+  const id = "local-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  localPlayers = [...localPlayers, clean(id, body)];
+  persist("fe-local-players", localPlayers);
+  return id;
+}
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function renderResults() {
+  const list = players();
+  const me = list.find(p => p.id === state.viewing);
+  if (!me && mode === "connecting") {
+    app.append(statusLine(), h("section", { class: "card" }, h("p", { class: "muted" }, "Loading results…")));
+    return;
+  }
+  if (!me) { state.viewing = null; state.screen = "home"; return renderHome(); }
+  const others = list.filter(p => p.id !== me.id);
+  const ranked = others.map(p => ({ p, score: compat(me.answers, p.answers) })).sort((a, b) => b.score - a.score);
+  const half = Math.ceil(ranked.length / 2);
+  const friends = ranked.slice(0, Math.min(3, half));
+  const enemies = ranked.slice(half).reverse().slice(0, 3);
+  const myOnDevice = list.filter(p => mine.includes(p.id));
+
+  app.append(
+    h("div", { class: "row", style: "justify-content:space-between" },
+      h("div", {},
+        h("div", { class: "label" }, "Results for"),
+        h("h2", { style: "font-family:var(--marker);font-weight:400", text: me.name })),
+      myOnDevice.length > 1
+        ? h("select", { id: "viewing", "aria-label": "Show results for", onchange: e => { state.viewing = e.target.value; render(); } },
+            myOnDevice.map(p => { const o = h("option", { value: p.id, text: p.name }); if (p.id === me.id) o.selected = true; return o; }))
+        : null),
+    statusLine(),
+  );
+
+  if (!others.length) {
+    app.append(h("section", { class: "card pop" },
+      h("h3", {}, "Waiting for other players"),
+      h("p", { class: "muted" }, "Your answers are saved. As soon as someone else finishes the quiz, your friends and enemies show up here.")));
+  } else {
+    app.append(
+      h("div", { class: "split pop" },
+        h("section", { class: "side friends" },
+          h("h3", {}, "Friends"),
+          h("p", { class: "note" }, "Answered most like you. Go find out what else you share."),
+          friends.map(({ p, score }) => matchCard(p, score, friendStarter(me, p)))),
+        h("section", { class: "side enemies" },
+          h("h3", {}, "Enemies"),
+          h("p", { class: "note" }, "Answered least like you. Go ask them why they're wrong."),
+          enemies.length
+            ? enemies.map(({ p, score }) => matchCard(p, score, enemyStarter(me, p)))
+            : h("p", { class: "empty" }, "Need a few more players to find your enemies."))),
+      h("section", { class: "card" },
+        h("div", { class: "label" }, `Everyone · ${others.length} ${others.length === 1 ? "player" : "players"}`),
+        h("div", { class: "everyone" }, ranked.map(({ p, score }) => {
+          const color = score >= 50 ? "var(--friend)" : "var(--enemy)";
+          return h("div", { class: "bar-row" },
+            h("span", { class: "n", text: p.name, title: p.name }),
+            h("div", { class: "bar" }, h("span", { style: `width:${score}%;background:${color}` })),
+            h("span", { class: "v" }, score + "%"));
+        }))),
+    );
+  }
+
+  app.append(
+    h("div", { class: "row" },
+      h("button", { class: "btn", onclick: () => { state.name = ""; go("home"); } }, "Next player on this device"),
+      h("button", { class: "btn ghost", onclick: () => go("home") }, "Home")),
+    h("p", { class: "note" }, "Scores update live as more people finish. 100% means every answer matched; answers next to each other on the list count as close."),
+  );
+}
+
+function matchCard(p, score, starter) {
+  return h("div", { class: "match" },
+    h("div", { class: "match-top" }, h("span", { class: "who", text: p.name }), h("span", { class: "pct" }, score + "%")),
+    h("p", { class: "starter", text: starter }));
+}
+
+function go(screen) { state.screen = screen; confirmingReset = false; render(); window.scrollTo(0, 0); }
+
+// Update only the live parts so typing in the name tag isn't interrupted.
+function refresh() {
+  if (state.screen === "home") {
+    const s = document.getElementById("status"); if (s) s.replaceWith(statusLine());
+    const c = document.getElementById("players-card"); if (c) c.replaceWith(playersCard());
+  } else if (state.screen === "results") {
+    const y = window.scrollY; render(); window.scrollTo(0, y);
+  }
+}
+
+async function resetGame() {
+  confirmingReset = false;
+  if (mode === "shared") {
+    for (const p of sharedPlayers.slice()) {
+      try { await db.doc("players/" + p.id).delete(); } catch {}
+    }
+  } else {
+    localPlayers = []; persist("fe-local-players", localPlayers);
+  }
+  mine = []; persist("fe-mine", mine);
+  refresh();
+}
+
+function switchToLocal(note) {
+  mode = "local"; modeNote = note; canReset = true; loadNote = "";
+}
+
+// ---------- connect to the shared store ----------
+let connecting;
+function connect() {
+  connecting = (async () => {
+    if (!window.claude || typeof window.claude.use !== "function") {
+      switchToLocal("Everyone plays on this device. Take the quiz, then pass the phone to the next person.");
+      refresh(); return;
+    }
+    const [dbNs, userNs] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    db = dbNs; user = userNs;
+    if (!db) {
+      switchToLocal("Sign in to join the shared game. For now this device keeps its own player list. Pass the phone around.");
+      refresh(); return;
+    }
+    const canWrite = user ? await user.can("data.write") : null;
+    if (canWrite === false) {
+      switchToLocal("Your account can view this game but can't add answers to it, so this device keeps its own player list.");
+      refresh(); return;
+    }
+    mode = "shared";
+    canReset = user ? await user.canEdit() : false;
+    loadNote = "";
+    const timer = setTimeout(() => { loadNote = "Can't reach the game yet. Players will appear when the connection comes back."; refresh(); }, 10000);
+    db.collection("players").onSnapshot(snap => {
+      if (!snap.metadata.fromCache) { clearTimeout(timer); loadNote = ""; }
+      sharedPlayers = snap.docs.map(d => clean(d.id, d.data())).filter(Boolean).sort((a, b) => a.at - b.at);
+      if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
+        // forget this device's players after a host reset
+        mine = mine.filter(id => id.startsWith("local-") || sharedPlayers.some(p => p.id === id));
+        persist("fe-mine", mine);
+      }
+      refresh();
+    }, () => {
+      clearTimeout(timer);
+      loadNote = "Lost the connection to the game. Reload the page to reconnect.";
+      refresh();
+    });
+    refresh();
+  })();
+}
+
+// ---------- boot ----------
+function boot(data) {
+  if (data && data.state) Object.assign(state, data.state);
+  render();
+  connect();
+}
+if (window.claude?.hot && typeof window.claude.hot.snapshot === "function") window.claude.hot.snapshot(() => ({ state }));
+window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>
