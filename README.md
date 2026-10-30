@@ -2,9 +2,12 @@
 
 A get-to-know-you party game for big groups.
 
-1. Write your name on the name tag.
-2. Answer 10 quick questions about what you like (weekend plans, pineapple on pizza, texting habits, and more).
-3. See who answered most like you (**friends**) and least like you (**enemies**), each with a conversation starter. Then go find them and talk.
+1. Pick a question pack: **Halloween**, **Classic**, **Food Fight**, or **Big Questions**.
+2. Write your name on the name tag.
+3. Answer 10 quick questions from that pack.
+4. See who answered most like you (**friends**) and least like you (**enemies**), each with a conversation starter. Then go find them and talk.
+
+Players are only compared with people who played the same pack. The page has a Halloween look with an animated night sky (moon, bats, fog, floating candy and a graveyard), which stays still for anyone who has reduced motion turned on.
 
 Everyone plays on one device: take the quiz, tap **Next player on this device**, and pass the phone. Results update as more people finish.
 

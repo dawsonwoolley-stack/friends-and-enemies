@@ -3,184 +3,276 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="A get-to-know-you party quiz: answer 10 questions, then find your friends and enemies.">
+<meta name="description" content="A get-to-know-you party quiz: pick a question pack, answer 10 questions, then find your friends and enemies.">
+<meta name="theme-color" content="#140b24">
 <title>Friends and Enemies</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;600;700&family=Permanent+Marker&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&family=Figtree:wght@400;600;700;800&family=Permanent+Marker&display=swap">
 <style>
-  html { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-  body { margin: 0; }
-  [hidden] { display: none !important; }
-  /* Layout: one narrow column like a phone screen. Home is a party name tag, quiz is one question at a time,
-     results split into a blue Friends side and a red Enemies side. */
+  /* Layout: one phone-width column floating over an animated Halloween night sky.
+     Home = pack picker + name tag, quiz = one question at a time, results = Friends (ghost green) vs Enemies (blood red). */
   :root {
-    --paper: #eef0f6;
-    --card: #ffffff;
-    --ink: #191c2b;
-    --muted: #5d6378;
-    --line: #d5d9e6;
-    --friend: #2457d6;
-    --friend-soft: #e1e8fb;
-    --enemy: #cf2a3a;
-    --enemy-soft: #fbe3e5;
-    --on-accent: #ffffff;
-    --display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+    --sky-top: #3a1f5c;
+    --sky-bottom: #0c0816;
+    --glass: rgba(20, 12, 36, 0.74);
+    --glass-strong: rgba(14, 8, 26, 0.88);
+    --glass-line: rgba(255, 170, 90, 0.20);
+    --ink: #f6ecdf;
+    --muted: #bdaecf;
+    --pumpkin: #ff7a1a;
+    --pumpkin-deep: #b84a00;
+    --candy: #ffd23f;
+    --tag-paper: #f6ecdf;
+    --tag-ink: #1a0d05;
+    --friend: #5df2a8;
+    --friend-soft: rgba(93, 242, 168, 0.12);
+    --enemy: #ff4d6a;
+    --enemy-soft: rgba(255, 77, 106, 0.13);
+    --on-pumpkin: #1a0d05;
+    --display: "Creepster", "Impact", fantasy;
     --body: "Figtree", "Segoe UI", system-ui, sans-serif;
     --marker: "Permanent Marker", "Comic Sans MS", cursive;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --paper: #11131c; --card: #1b1e2b; --ink: #eceef6; --muted: #9aa0b6; --line: #2d3142;
-      --friend: #7598ff; --friend-soft: #1f2a4d; --enemy: #ff6270; --enemy-soft: #45202a; --on-accent: #11131c;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --paper: #11131c; --card: #1b1e2b; --ink: #eceef6; --muted: #9aa0b6; --line: #2d3142;
-    --friend: #7598ff; --friend-soft: #1f2a4d; --enemy: #ff6270; --enemy-soft: #45202a; --on-accent: #11131c;
     color-scheme: dark;
   }
-
+  html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+         background: var(--sky-bottom); }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body {
-    background: var(--paper);
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--sky-top) 0%, #1d1036 45%, var(--sky-bottom) 100%) fixed;
+    background-color: var(--sky-bottom);
     color: var(--ink);
     font-family: var(--body);
     font-size: 16px;
     line-height: 1.5;
-    padding-block: 28px 48px;
+    padding-block: 28px 64px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  #app { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+  #bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  #app { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
 
-  h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; line-height: 1.05; }
-  h1 { font-size: clamp(2.6rem, 11vw, 4.2rem); font-weight: 800; letter-spacing: -0.02em; }
-  h1 .f { color: var(--friend); }
-  h1 .e { color: var(--enemy); }
-  h1 .and { display: block; font-family: var(--body); font-weight: 600; font-size: 0.32em; letter-spacing: 0.2em;
-            text-transform: uppercase; color: var(--muted); margin-block: 6px; }
-  h2 { font-size: 1.6rem; font-weight: 800; }
-  h3 { font-size: 1.15rem; font-weight: 800; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; line-height: 1.05; }
+  h1 { font-family: var(--display); font-weight: 400; font-size: clamp(3.2rem, 15vw, 5.6rem); letter-spacing: 0.03em; text-align: center; }
+  h1 .f { color: var(--friend); text-shadow: 0 0 18px rgba(93, 242, 168, 0.55); }
+  h1 .e { color: var(--enemy); text-shadow: 0 0 18px rgba(255, 77, 106, 0.55); }
+  h1 .and { display: block; font-family: var(--body); font-weight: 800; font-size: 0.2em; letter-spacing: 0.4em;
+            text-transform: uppercase; color: var(--candy); margin-block: 4px 2px; text-shadow: none; }
+  .tagline { text-align: center; color: var(--muted); font-size: 1.02rem; margin-top: -8px; }
+  h2 { font-family: var(--display); font-weight: 400; font-size: 2rem; letter-spacing: 0.03em; }
+  h3 { font-family: var(--display); font-weight: 400; font-size: 1.9rem; letter-spacing: 0.04em; }
   p { margin: 0; }
   .muted { color: var(--muted); }
-  .label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .label { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--candy); }
+
+  .flicker { animation: flicker 3.2s ease-out 1; }
+  @keyframes flicker {
+    0%, 6%, 10%, 14% { opacity: 0.15; } 4%, 8%, 12% { opacity: 1; } 18%, 100% { opacity: 1; }
+  }
+
+  .card { background: var(--glass); border: 1px solid var(--glass-line); border-radius: 18px; padding: 18px;
+          display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 
   /* status line */
-  .status { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); flex-wrap: wrap; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
-  .status[data-mode="shared"] .dot { background: #1fa45b; box-shadow: 0 0 0 3px color-mix(in srgb, #1fa45b 25%, transparent); }
-  .status[data-mode="local"] .dot { background: var(--muted); }
+  .status { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; color: var(--muted); flex-wrap: wrap; text-align: center; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+  .status[data-mode="shared"] .dot { background: var(--friend); box-shadow: 0 0 8px var(--friend); }
 
   /* how to play */
   .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: s; }
   .steps li { display: flex; gap: 12px; align-items: baseline; counter-increment: s; }
-  .steps li::before { content: counter(s); font-family: var(--display); font-weight: 800; color: var(--muted);
-                      min-width: 1.2em; font-variant-numeric: tabular-nums; }
+  .steps li::before { content: counter(s); font-family: var(--display); color: var(--pumpkin); font-size: 1.4rem; line-height: 1;
+                      min-width: 1em; font-variant-numeric: tabular-nums; }
+  details summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: "+"; font-size: 1.4rem; color: var(--pumpkin); line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details[open] summary { margin-bottom: 12px; }
+
+  /* pack picker */
+  .packs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 420px) { .packs { grid-template-columns: 1fr; } }
+  .pack { text-align: left; background: var(--glass-strong); color: var(--ink); border: 2px solid var(--glass-line); border-radius: 14px;
+          padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; transition: border-color .15s, box-shadow .15s, transform .15s; }
+  .pack .ico { grid-row: span 2; font-size: 1.9rem; line-height: 1; }
+  .pack .nm { font-weight: 800; font-size: 1.02rem; }
+  .pack .bl { font-size: 0.84rem; color: var(--muted); grid-column: 2; }
+  .pack:hover { border-color: rgba(255, 122, 26, 0.6); transform: translateY(-1px); }
+  .pack[aria-checked="true"] { border-color: var(--pumpkin); box-shadow: 0 0 0 1px var(--pumpkin), 0 0 22px -4px rgba(255, 122, 26, 0.7); }
 
   /* name tag */
-  .tag { background: var(--card); border: 2px solid var(--enemy); border-radius: 14px; overflow: hidden;
-         box-shadow: 0 10px 30px -18px rgba(0,0,0,.45); transform: rotate(-1.2deg); }
-  .tag-top { background: var(--enemy); color: var(--on-accent); text-align: center; padding-block: 10px 8px; }
-  .tag-top .hello { display: block; font-family: var(--display); font-weight: 800; font-size: 2rem; letter-spacing: 0.08em; line-height: 1; }
-  .tag-top .sub { font-weight: 600; font-size: 0.95rem; }
-  .tag input { width: 100%; border: none; background: transparent; color: var(--ink); text-align: center;
-               font-family: var(--marker); font-size: clamp(1.8rem, 8vw, 2.6rem); padding: 18px 12px 22px; }
-  .tag input::placeholder { color: var(--line); }
+  .tag { background: var(--tag-paper); border: 3px solid var(--pumpkin); border-radius: 16px; overflow: hidden;
+         box-shadow: 0 14px 40px -16px rgba(0,0,0,.8), 0 0 30px -10px rgba(255, 122, 26, 0.5); transform: rotate(-1.5deg); }
+  .tag-top { background: var(--pumpkin); color: var(--on-pumpkin); text-align: center; padding-block: 8px 6px; }
+  .tag-top .hello { display: block; font-family: var(--display); font-size: 2.4rem; letter-spacing: 0.1em; line-height: 1; }
+  .tag-top .sub { font-weight: 800; font-size: 0.95rem; }
+  .tag input { width: 100%; border: none; background: transparent; color: var(--tag-ink); text-align: center;
+               font-family: var(--marker); font-size: clamp(1.8rem, 8vw, 2.6rem); padding: 16px 12px 20px; }
+  .tag input::placeholder { color: #cbbfae; }
   .tag input:focus { outline: none; }
-  .tag:focus-within { box-shadow: 0 0 0 4px color-mix(in srgb, var(--enemy) 30%, transparent), 0 10px 30px -18px rgba(0,0,0,.45); }
+  .tag:focus-within { box-shadow: 0 0 0 4px rgba(255, 210, 63, 0.6), 0 14px 40px -16px rgba(0,0,0,.8); }
 
   /* buttons */
   button { font: inherit; cursor: pointer; }
-  .btn { border: none; border-radius: 999px; padding: 14px 26px; font-weight: 700; font-size: 1.05rem;
-         background: var(--ink); color: var(--paper); transition: transform .1s; }
-  .btn:active { transform: translateY(2px); }
-  .btn:disabled { opacity: .4; cursor: not-allowed; }
-  .btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--line); }
-  .btn.danger { background: var(--enemy); color: var(--on-accent); }
+  .btn { border: none; border-radius: 999px; padding: 14px 28px; font-weight: 800; font-size: 1.05rem; letter-spacing: 0.02em;
+         background: var(--pumpkin); color: var(--on-pumpkin); box-shadow: 0 5px 0 var(--pumpkin-deep), 0 0 24px -6px rgba(255, 122, 26, 0.8);
+         transition: transform .1s, box-shadow .1s, filter .15s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--pumpkin-deep); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.4); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--glass-line); box-shadow: none; }
+  .btn.ghost:hover { border-color: var(--pumpkin); }
+  .btn.danger { background: var(--enemy); color: var(--on-pumpkin); box-shadow: 0 4px 0 #8f1f31; }
   .btn.small { padding: 8px 16px; font-size: 0.9rem; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  button:focus-visible, select:focus-visible { outline: 3px solid var(--friend); outline-offset: 3px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .row.center { justify-content: center; }
+  button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--candy); outline-offset: 3px; }
 
   /* player chips */
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.9rem; }
-  .chip.me { border-color: var(--ink); font-weight: 700; }
+  .chip { background: rgba(255,255,255,0.06); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 12px; font-size: 0.9rem; }
+  .chip.me { border-color: var(--pumpkin); color: var(--candy); font-weight: 700; }
 
   /* quiz */
-  .progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
-  .progress span { display: block; height: 100%; background: var(--ink); transition: width .25s; }
-  .qhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .question { font-family: var(--display); font-weight: 800; font-size: clamp(1.8rem, 7vw, 2.4rem); line-height: 1.1; text-wrap: balance; }
+  .progress { height: 12px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; border: 1px solid var(--glass-line); }
+  .progress span { display: block; height: 100%; border-radius: 99px; transition: width .3s;
+                   background: repeating-linear-gradient(135deg, var(--candy) 0 10px, var(--pumpkin) 10px 20px, #fff4e0 20px 30px); }
+  .qhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .question { font-family: var(--body); font-weight: 800; font-size: clamp(1.7rem, 6.5vw, 2.3rem); line-height: 1.15; text-wrap: balance; }
   .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   @media (max-width: 480px) { .answers { grid-template-columns: 1fr; } }
-  .answer { text-align: left; background: var(--card); color: var(--ink); border: 2px solid var(--line); border-radius: 14px;
-            padding: 16px; font-weight: 600; font-size: 1.02rem; display: flex; gap: 12px; align-items: flex-start; min-height: 72px; }
-  .answer .key { font-family: var(--display); font-weight: 800; color: var(--muted); }
-  .answer:hover { border-color: var(--ink); }
-  .answer[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
-  .answer[aria-pressed="true"] .key { color: var(--paper); }
+  .answer { text-align: left; background: var(--glass-strong); color: var(--ink); border: 2px solid var(--glass-line); border-radius: 14px;
+            padding: 16px; font-weight: 700; font-size: 1.02rem; display: flex; gap: 12px; align-items: flex-start; min-height: 72px;
+            transition: border-color .15s, box-shadow .15s, transform .15s; }
+  .answer .key { font-family: var(--display); font-size: 1.3rem; line-height: 1.1; color: var(--pumpkin); }
+  .answer:hover { border-color: var(--pumpkin); box-shadow: 0 0 20px -6px rgba(255, 122, 26, 0.8); transform: translateY(-1px); }
+  .answer[aria-pressed="true"] { border-color: var(--pumpkin); background: var(--pumpkin); color: var(--on-pumpkin); }
+  .answer[aria-pressed="true"] .key { color: var(--on-pumpkin); }
 
   /* results */
+  .results-head { text-align: center; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+  .results-head .who { font-family: var(--marker); font-size: clamp(2rem, 9vw, 2.8rem); line-height: 1.1; overflow-wrap: anywhere; }
   .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 560px) { .split { grid-template-columns: 1fr; } }
-  .side { border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-  .side.friends { background: var(--friend-soft); }
-  .side.enemies { background: var(--enemy-soft); }
-  .side h3 { font-size: 1.4rem; }
-  .side.friends h3 { color: var(--friend); }
-  .side.enemies h3 { color: var(--enemy); }
-  .match { background: var(--card); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .side { border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0;
+          background: var(--glass); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .side.friends { border: 1px solid rgba(93, 242, 168, 0.45); box-shadow: inset 0 0 40px -10px var(--friend-soft), 0 0 30px -14px var(--friend); }
+  .side.enemies { border: 1px solid rgba(255, 77, 106, 0.45); box-shadow: inset 0 0 40px -10px var(--enemy-soft), 0 0 30px -14px var(--enemy); }
+  .side.friends h3 { color: var(--friend); text-shadow: 0 0 14px rgba(93, 242, 168, 0.5); }
+  .side.enemies h3 { color: var(--enemy); text-shadow: 0 0 14px rgba(255, 77, 106, 0.5); }
+  .match { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .friends .match { background: var(--friend-soft); }
+  .enemies .match { background: var(--enemy-soft); }
   .match-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
   .match .who { font-family: var(--marker); font-size: 1.35rem; line-height: 1.2; overflow-wrap: anywhere; }
-  .match .pct { font-family: var(--display); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+  .match .pct { font-family: var(--display); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
   .friends .pct { color: var(--friend); }
   .enemies .pct { color: var(--enemy); }
   .match .starter { font-size: 0.9rem; color: var(--muted); }
   .empty { font-size: 0.92rem; color: var(--muted); }
 
-  .everyone { display: grid; gap: 8px; }
+  .everyone { display: grid; gap: 9px; }
   .bar-row { display: grid; grid-template-columns: minmax(0, 9rem) 1fr 3rem; gap: 10px; align-items: center; font-size: 0.95rem; }
   .bar-row .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .bar { height: 10px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
   .bar span { display: block; height: 100%; border-radius: 99px; }
-  .bar-row .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .bar-row .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
 
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
-  select { font: inherit; padding: 8px 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--card); color: var(--ink); max-width: 100%; }
+  select { font: inherit; padding: 8px 12px; border-radius: 10px; border: 2px solid var(--glass-line); background: var(--glass-strong); color: var(--ink); max-width: 100%; }
   .note { font-size: 0.88rem; color: var(--muted); }
-  .error { color: var(--enemy); font-weight: 600; font-size: 0.92rem; }
+  .error { color: var(--enemy); font-weight: 700; font-size: 0.92rem; }
 
-  .pop { animation: pop .3s ease-out; }
-  @keyframes pop { from { transform: translateY(6px); opacity: .4; } to { transform: none; opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .pop { animation: none; } .progress span, .btn { transition: none; } .tag { transform: none; } }
+  .pop { animation: pop .35s ease-out; }
+  @keyframes pop { from { transform: translateY(8px) scale(.98); opacity: .3; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .pop, .flicker { animation: none; }
+    .progress span, .btn, .answer, .pack { transition: none; }
+    .tag { transform: none; }
+  }
 </style>
 </head>
 <body>
+<canvas id="bg" aria-hidden="true"></canvas>
 <div id="app"></div>
 
 <script>
-const QUESTIONS = [
-  { topic: "Weekend",  q: "Your perfect Friday night?",            a: ["Couch, snacks and a movie", "Dinner with a few friends", "A big loud party", "Spontaneous road trip"] },
-  { topic: "Food",     q: "Pineapple on pizza?",                    a: ["Absolutely not", "Only if someone else orders it", "Sure, why not", "Best topping ever"] },
-  { topic: "Sleep",    q: "When are you at your best?",             a: ["Up before sunrise", "Mid-morning", "Late at night", "3 a.m. and wide awake"] },
-  { topic: "Travel",   q: "Dream vacation?",                        a: ["Quiet cabin in the woods", "Lazy week at the beach", "Big city, packed schedule", "One-way ticket, no plan"] },
-  { topic: "Texting",  q: "How fast do you text back?",             a: ["Instantly", "Within the hour", "Whenever I remember", "I leave people on read for days"] },
-  { topic: "Planning", q: "How do you plan a trip?",                a: ["Spreadsheet, every hour planned", "A rough list of must-dos", "Book the flight, figure out the rest", "Plans? I just show up"] },
-  { topic: "Music",    q: "You get the aux. What's playing?",       a: ["Chill acoustic", "Throwbacks only", "Whatever's on the charts", "Bass loud enough to shake the walls"] },
-  { topic: "Pets",     q: "Pick your pet situation.",               a: ["No pets, thanks", "A low-key cat", "A dog that goes everywhere with me", "A whole farm"] },
-  { topic: "Movies",   q: "It's your pick for movie night.",        a: ["A documentary", "A good drama", "A comedy", "The scariest horror movie we can find"] },
-  { topic: "Games",    q: "How competitive are you at game night?", a: ["Just here for the snacks", "Playing for fun", "I play to win", "I have flipped a board before"] },
-];
-const N = QUESTIONS.length;
+// ---------- question packs ----------
+// Every answer list runs along a scale, so neighbors count as close and opposite ends count as far apart.
+const PACKS = {
+  halloween: {
+    name: "Halloween", icon: "🎃", blurb: "Costumes, candy corn, ghosts and zombies.",
+    questions: [
+      { topic: "Halloween night", q: "Your ideal Halloween night?",               a: ["Handing out candy at home", "A small costume party", "A huge Halloween party", "Sneaking into a haunted house at midnight"] },
+      { topic: "Costumes",        q: "What's your costume strategy?",             a: ["No costume, ever", "Something easy from my closet", "Store-bought and solid", "Handmade and planned since July"] },
+      { topic: "Candy corn",      q: "Candy corn: yes or no?",                    a: ["Absolutely disgusting", "One or two, to be polite", "Honestly pretty good", "I eat it by the handful"] },
+      { topic: "Horror movies",   q: "How do you handle horror movies?",          a: ["I can't watch them", "Only with the lights on", "I love a good scare", "The gorier the better"] },
+      { topic: "Haunted houses",  q: "Someone suggests a haunted house.",         a: ["Not a chance", "Only if someone holds my hand", "Front of the line", "I want to work there"] },
+      { topic: "Ghosts",          q: "Do you believe in ghosts?",                 a: ["No way", "Probably not", "Maybe…", "I've seen one"] },
+      { topic: "Decorations",     q: "When do your decorations go up?",           a: ["I don't decorate", "The week of Halloween", "October 1st", "They never come down"] },
+      { topic: "Trick-or-treaters", q: "Trick-or-treaters ring your doorbell.",   a: ["Lights off, pretend I'm not home", "A small bowl of candy", "Full-size candy bars", "I jump out of the bushes in costume"] },
+      { topic: "Pumpkin spice",   q: "Pumpkin spice everything?",                 a: ["I hate it", "Once a season", "Every week in the fall", "It's my whole personality"] },
+      { topic: "Zombies",         q: "The zombie apocalypse starts. Your plan?",  a: ["Lock the doors and hide", "Join a group and follow the leader", "Become the leader", "Grab a bat and go fight"] },
+    ],
+  },
+  classic: {
+    name: "Classic", icon: "🎲", blurb: "Weekends, pizza, texting and game night.",
+    questions: [
+      { topic: "Weekend",  q: "Your perfect Friday night?",            a: ["Couch, snacks and a movie", "Dinner with a few friends", "A big loud party", "Spontaneous road trip"] },
+      { topic: "Food",     q: "Pineapple on pizza?",                    a: ["Absolutely not", "Only if someone else orders it", "Sure, why not", "Best topping ever"] },
+      { topic: "Sleep",    q: "When are you at your best?",             a: ["Up before sunrise", "Mid-morning", "Late at night", "3 a.m. and wide awake"] },
+      { topic: "Travel",   q: "Dream vacation?",                        a: ["Quiet cabin in the woods", "Lazy week at the beach", "Big city, packed schedule", "One-way ticket, no plan"] },
+      { topic: "Texting",  q: "How fast do you text back?",             a: ["Instantly", "Within the hour", "Whenever I remember", "I leave people on read for days"] },
+      { topic: "Planning", q: "How do you plan a trip?",                a: ["Spreadsheet, every hour planned", "A rough list of must-dos", "Book the flight, figure out the rest", "Plans? I just show up"] },
+      { topic: "Music",    q: "You get the aux. What's playing?",       a: ["Chill acoustic", "Throwbacks only", "Whatever's on the charts", "Bass loud enough to shake the walls"] },
+      { topic: "Pets",     q: "Pick your pet situation.",               a: ["No pets, thanks", "A low-key cat", "A dog that goes everywhere with me", "A whole farm"] },
+      { topic: "Movies",   q: "It's your pick for movie night.",        a: ["A documentary", "A good drama", "A comedy", "The scariest horror movie we can find"] },
+      { topic: "Games",    q: "How competitive are you at game night?", a: ["Just here for the snacks", "Playing for fun", "I play to win", "I have flipped a board before"] },
+    ],
+  },
+  food: {
+    name: "Food Fight", icon: "🌶️", blurb: "Spice levels, leftovers and who pays.",
+    questions: [
+      { topic: "Breakfast",   q: "What does breakfast look like for you?", a: ["I skip it", "Coffee and go", "A real sit-down meal", "Breakfast food for every meal"] },
+      { topic: "Spice",       q: "How spicy do you go?",                   a: ["Mild, please", "Medium", "Hot", "I want to cry"] },
+      { topic: "New foods",   q: "Someone offers you a food you've never seen.", a: ["No thanks", "Maybe one small bite", "Sure, I'll try it", "I'll eat anything once"] },
+      { topic: "Cooking",     q: "How much do you cook?",                  a: ["I own a microwave", "I can follow a recipe", "I cook most nights", "I host dinner parties"] },
+      { topic: "Eating out",  q: "Where are we eating?",                   a: ["Drive-thru", "Casual sit-down", "A nice restaurant", "The fanciest tasting menu in town"] },
+      { topic: "Snacks",      q: "Sweet or salty?",                        a: ["All sweet", "Mostly sweet", "Mostly salty", "All salty"] },
+      { topic: "Leftovers",   q: "How do you feel about leftovers?",       a: ["Never eat them", "Only if I have to", "Love them", "Cold pizza is the best meal of the week"] },
+      { topic: "Ketchup",     q: "Where does ketchup belong?",             a: ["Nowhere", "Fries only", "Most things", "Everything, even eggs"] },
+      { topic: "The check",   q: "The check arrives.",                     a: ["I pay exactly what I ordered", "We split it evenly", "I'll get the next one", "I'm paying, no arguments"] },
+      { topic: "Dessert",     q: "Dessert?",                               a: ["Skip it", "Share one with the table", "My own dessert", "Dessert first"] },
+    ],
+  },
+  deep: {
+    name: "Big Questions", icon: "🌙", blurb: "Risk, money, conflict and the future.",
+    questions: [
+      { topic: "The future",  q: "Where do you see yourself in 10 years?", a: ["Same town, close to family", "Somewhere new in the same country", "Living in another country", "No idea, and that's exciting"] },
+      { topic: "Recharging",  q: "How do you recharge?",                   a: ["Alone time", "With one close friend", "A small group", "A big crowd"] },
+      { topic: "Decisions",   q: "How do you make big decisions?",         a: ["Pure logic", "Mostly logic", "Mostly gut", "Pure gut feeling"] },
+      { topic: "Risk",        q: "How much risk do you take?",             a: ["I play it safe", "Calculated risks", "Big swings sometimes", "All in, every time"] },
+      { topic: "Conflict",    q: "How do you handle conflict?",            a: ["Avoid it", "Cool off, then talk", "Talk it out soon", "Address it on the spot"] },
+      { topic: "Rules",       q: "How do you feel about rules?",           a: ["Follow them", "Mostly follow them", "Bend them when it makes sense", "Made to be broken"] },
+      { topic: "Money",       q: "Saver or spender?",                      a: ["I save every dollar", "Mostly a saver", "Mostly a spender", "You can't take it with you"] },
+      { topic: "Routine",     q: "Routine or variety?",                    a: ["Same routine every day", "Mostly routine", "Mostly variety", "Every day is different"] },
+      { topic: "Friendship",  q: "What does your friend circle look like?", a: ["A few lifelong friends", "A small solid group", "A big friend group", "Friends everywhere I go"] },
+      { topic: "Honesty",     q: "A friend asks if you like their new haircut. You don't.", a: ["\"I love it!\"", "\"It's different, in a good way\"", "\"Honestly, it's not my favorite\"", "\"Why would you do that?\""] },
+    ],
+  },
+};
+const PACK_ORDER = ["halloween", "classic", "food", "deep"];
+const N = 10;
 const KEYS = ["A", "B", "C", "D"];
 
 // ---------- state ----------
-const state = { screen: "home", name: "", answers: [], q: 0, viewing: null };
+const state = { screen: "home", name: "", answers: [], q: 0, viewing: null, pack: load("fe-pack", "halloween") };
+if (!PACKS[state.pack]) state.pack = "halloween";
 let mode = "connecting";          // "connecting" | "shared" | "local"
 let db = null, user = null, canReset = false;
 let sharedPlayers = [];
-let localPlayers = load("fe-local-players", []);
+let localPlayers = load("fe-local-players", []).map(p => clean(p && p.id, p)).filter(Boolean);
 let mine = load("fe-mine", []);   // player ids created on this device
 let modeNote = "";
 let loadNote = "";
@@ -193,11 +285,14 @@ function load(key, fallback) {
 function persist(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
 
 function players() { return mode === "shared" ? sharedPlayers : localPlayers; }
+function packPlayers(pack) { return players().filter(p => p.pack === pack); }
+function questionsFor(pack) { return PACKS[pack].questions; }
 
 function clean(id, d) {
-  if (!d || typeof d.name !== "string" || !Array.isArray(d.answers) || d.answers.length !== N) return null;
+  if (!id || !d || typeof d.name !== "string" || !Array.isArray(d.answers) || d.answers.length !== N) return null;
   if (!d.answers.every(x => Number.isInteger(x) && x >= 0 && x <= 3)) return null;
-  return { id, name: d.name.trim().slice(0, 24) || "Someone", answers: d.answers.slice(), at: Number(d.at) || 0 };
+  const pack = PACKS[d.pack] ? d.pack : "classic";
+  return { id, name: d.name.trim().slice(0, 24) || "Someone", answers: d.answers.slice(), pack, at: Number(d.at) || 0 };
 }
 
 // ---------- scoring ----------
@@ -206,25 +301,25 @@ function compat(a, b) {
   for (let i = 0; i < N; i++) s += 1 - Math.abs(a[i] - b[i]) / 3;
   return Math.round((s / N) * 100);
 }
+function extremity(v) { return Math.abs(v - 1.5); }
 function friendStarter(me, other) {
+  const Q = questionsFor(me.pack);
   const same = [];
   for (let i = 0; i < N; i++) if (me.answers[i] === other.answers[i]) same.push(i);
   if (!same.length) {
     let best = 0;
     for (let i = 1; i < N; i++) if (Math.abs(me.answers[i] - other.answers[i]) < Math.abs(me.answers[best] - other.answers[best])) best = i;
-    return `Closest on ${QUESTIONS[best].topic.toLowerCase()}. Start there.`;
+    return `You're closest on ${Q[best].topic.toLowerCase()}. Start there.`;
   }
-  // a shared extreme answer makes the best conversation
   same.sort((x, y) => extremity(me.answers[y]) - extremity(me.answers[x]));
   const i = same[0];
-  return `You both said "${QUESTIONS[i].a[me.answers[i]]}" (${QUESTIONS[i].topic}).`;
+  return `You both said "${Q[i].a[me.answers[i]]}" (${Q[i].topic}).`;
 }
-function extremity(v) { return Math.abs(v - 1.5); }
 function enemyStarter(me, other) {
+  const Q = questionsFor(me.pack);
   let worst = 0;
   for (let i = 1; i < N; i++) if (Math.abs(me.answers[i] - other.answers[i]) > Math.abs(me.answers[worst] - other.answers[worst])) worst = i;
-  const q = QUESTIONS[worst];
-  return `${q.topic}: you said "${q.a[me.answers[worst]]}", they said "${q.a[other.answers[worst]]}".`;
+  return `${Q[worst].topic}: you said "${Q[worst].a[me.answers[worst]]}", they said "${Q[worst].a[other.answers[worst]]}".`;
 }
 
 // ---------- tiny DOM helper ----------
@@ -251,13 +346,14 @@ function render() {
   renderHome();
 }
 
-function statusLine() {
-  const count = players().length;
+function statusLine(pack) {
+  const count = packPlayers(pack).length;
   const el = h("div", { class: "status", "data-mode": mode, id: "status" }, h("span", { class: "dot" }));
+  const who = `${count} ${count === 1 ? "player" : "players"} in the ${PACKS[pack].name} pack`;
   let text;
-  if (mode === "connecting") text = "Connecting to the game…";
-  else if (mode === "shared") text = `Live game · ${count} ${count === 1 ? "player" : "players"} so far`;
-  else text = `Playing on this device · ${count} ${count === 1 ? "player" : "players"} so far`;
+  if (mode === "connecting") text = "Summoning the game…";
+  else if (mode === "shared") text = `Live game · ${who}`;
+  else text = `Playing on this device · ${who}`;
   el.append(h("span", { text }));
   return el;
 }
@@ -271,41 +367,62 @@ function renderHome() {
   });
   const startBtn = h("button", { class: "btn", id: "start", onclick: start, disabled: !state.name.trim() }, "Start the quiz");
   const myPlayers = players().filter(p => mine.includes(p.id));
+  const seenHowTo = load("fe-seen-howto", false);
 
   app.append(
     h("header", { class: "pop" },
-      h("h1", {}, h("span", { class: "f" }, "Friends"), h("span", { class: "and" }, "and"), h("span", { class: "e" }, "Enemies"))),
-    statusLine(),
-    h("section", { class: "card", id: "how-to-play" },
-      h("div", { class: "label" }, "How to play"),
+      h("h1", { class: "flicker" }, h("span", { class: "f" }, "Friends"), h("span", { class: "and" }, "and"), h("span", { class: "e" }, "Enemies"))),
+    h("p", { class: "tagline" }, "Answer 10 questions. Find your people. Confront your rivals."),
+    statusLine(state.pack),
+
+    h("details", { class: "card", id: "how-to-play", open: !seenHowTo, ontoggle: e => { if (!e.target.open) persist("fe-seen-howto", true); } },
+      h("summary", {}, h("span", { class: "label" }, "How to play")),
       h("ol", { class: "steps" },
+        h("li", {}, "Pick a question pack. Everyone at the party should play the same pack."),
         h("li", {}, "Write your name on the name tag and tap Start the quiz."),
         h("li", {}, `Answer ${N} quick questions. Tap an answer to move to the next one.`),
         h("li", {}, "Tap Next player on this device and hand the phone to the next person."),
         h("li", {}, "Check your results. Friends answered most like you, Enemies answered least like you, and each one comes with a conversation starter. Go find them and talk.")),
       h("p", { class: "note" }, `Scoring: a matching answer counts fully, a close answer counts partly, and an opposite answer counts zero. Your score with someone is the average across all ${N} questions.`)),
+
+    h("section", { class: "card" },
+      h("div", { class: "label", id: "pack-label" }, "Question pack"),
+      h("div", { class: "packs", role: "radiogroup", "aria-labelledby": "pack-label" },
+        PACK_ORDER.map(id => h("button", {
+          class: "pack", role: "radio", "aria-checked": String(state.pack === id), id: "pack-" + id,
+          onclick: () => choosePack(id),
+        }, h("span", { class: "ico", "aria-hidden": "true" }, PACKS[id].icon), h("span", { class: "nm" }, PACKS[id].name), h("span", { class: "bl" }, PACKS[id].blurb))))),
+
     h("div", { class: "tag" },
-      h("div", { class: "tag-top" }, h("span", { class: "hello" }, "HELLO"), h("span", { class: "sub" }, "my name is")),
+      h("div", { class: "tag-top" }, h("span", { class: "hello" }, "BOO!"), h("span", { class: "sub" }, "my name is")),
       nameInput),
-    h("div", { class: "row" },
+    h("div", { class: "row center" },
       startBtn,
       myPlayers.length ? h("button", { class: "btn ghost", onclick: () => { state.viewing = myPlayers[myPlayers.length - 1].id; go("results"); } }, "See my results") : null),
-    modeNote ? h("p", { class: "note", text: modeNote }) : null,
+    modeNote ? h("p", { class: "note", style: "text-align:center", text: modeNote }) : null,
     playersCard(),
   );
 }
 
+function choosePack(id) {
+  if (!PACKS[id] || id === state.pack) return;
+  state.pack = id;
+  persist("fe-pack", id);
+  for (const b of app.querySelectorAll(".pack")) b.setAttribute("aria-checked", String(b.id === "pack-" + id));
+  refresh();
+}
+
 function playersCard() {
-  const list = players();
+  const list = packPlayers(state.pack);
   const card = h("section", { class: "card", id: "players-card" },
-    h("div", { class: "label" }, "Who's playing"));
+    h("div", { class: "label" }, `Who's playing ${PACKS[state.pack].name}`));
   if (loadNote) card.append(h("p", { class: "note", text: loadNote }));
   if (!list.length) {
-    card.append(h("p", { class: "empty" }, mode === "connecting" ? "Loading players…" : "No one has played yet. Be the first."));
+    card.append(h("p", { class: "empty" }, mode === "connecting" ? "Loading players…" : "No one has played this pack yet. Be the first."));
   } else {
     card.append(h("div", { class: "chips" }, list.map(p => h("span", { class: "chip" + (mine.includes(p.id) ? " me" : ""), text: p.name }))));
   }
-  if (canReset && list.length) card.append(resetControls());
+  if (canReset && players().length) card.append(resetControls());
   return card;
 }
 
@@ -315,7 +432,7 @@ function resetControls() {
   }
   const n = players().length;
   return h("div", { class: "row" },
-    h("span", { class: "note", text: `Delete all ${n} players and start over?` }),
+    h("span", { class: "note", text: `Delete all ${n} players in every pack and start over?` }),
     h("button", { class: "btn danger small", onclick: resetGame }, "Yes, reset"),
     h("button", { class: "btn ghost small", onclick: () => { confirmingReset = false; refresh(); } }, "Cancel"));
 }
@@ -331,17 +448,19 @@ function start() {
 
 function renderQuiz() {
   const i = state.q;
-  const Q = QUESTIONS[i];
+  const P = PACKS[state.pack];
+  const Q = P.questions[i];
   app.append(
     h("div", { class: "qhead" },
-      h("span", { class: "label" }, `${state.name} · ${Q.topic}`),
+      h("span", { class: "label" }, `${P.icon} ${P.name} · ${Q.topic}`),
       h("span", { class: "label" }, `Question ${i + 1} of ${N}`)),
     h("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(N), "aria-valuenow": String(i) },
-      h("span", { style: `width:${(i / N) * 100}%` })),
+      h("span", { style: `width:${Math.max(4, (i / N) * 100)}%` })),
+    h("p", { class: "note", text: `${state.name}, pick the answer that fits you best.` }),
     h("p", { class: "question pop", id: "question" }, Q.q),
     h("div", { class: "answers" },
       Q.a.map((text, k) => h("button", {
-        class: "answer", "aria-pressed": String(state.answers[i] === k),
+        class: "answer pop", "aria-pressed": String(state.answers[i] === k), style: `animation-delay:${k * 40}ms`,
         onclick: () => choose(k),
       }, h("span", { class: "key" }, KEYS[k]), h("span", {}, text)))),
     h("div", { class: "row" },
@@ -349,8 +468,6 @@ function renderQuiz() {
       saving ? h("span", { class: "note" }, "Saving your answers…") : null,
       saveError ? h("span", { class: "error", text: saveError }) : null),
   );
-  const first = app.querySelector(".answer");
-  if (first && document.activeElement === document.body) first.focus({ preventScroll: true });
 }
 
 function choose(k) {
@@ -367,7 +484,7 @@ function back() {
 
 async function finish() {
   saving = true; saveError = ""; render();
-  const body = { name: state.name, answers: state.answers.slice(0, N), at: Date.now(), v: 1 };
+  const body = { name: state.name, answers: state.answers.slice(0, N), pack: state.pack, at: Date.now(), v: 2 };
   try {
     const id = await savePlayer(body);
     mine.push(id); persist("fe-mine", mine);
@@ -395,7 +512,6 @@ async function savePlayer(body) {
     } catch (e) {
       if (e && e.code === "unavailable") { await wait(600 + Math.random() * 600); await ref.set(body); return ref.id; }
       if (!(e && (e.code === "invalid_argument" || e.code === "not_granted"))) throw e;
-      // This account can't write to the shared game: fall back to this device.
       switchToLocal("Your account can view this game but can't add answers to it, so this device keeps its own player list.");
     }
   }
@@ -407,36 +523,37 @@ async function savePlayer(body) {
 function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function renderResults() {
-  const list = players();
-  const me = list.find(p => p.id === state.viewing);
+  const all = players();
+  const me = all.find(p => p.id === state.viewing);
   if (!me && mode === "connecting") {
-    app.append(statusLine(), h("section", { class: "card" }, h("p", { class: "muted" }, "Loading results…")));
+    app.append(h("section", { class: "card" }, h("p", { class: "muted" }, "Loading results…")));
     return;
   }
   if (!me) { state.viewing = null; state.screen = "home"; return renderHome(); }
-  const others = list.filter(p => p.id !== me.id);
+  const P = PACKS[me.pack];
+  const others = packPlayers(me.pack).filter(p => p.id !== me.id);
   const ranked = others.map(p => ({ p, score: compat(me.answers, p.answers) })).sort((a, b) => b.score - a.score);
   const half = Math.ceil(ranked.length / 2);
   const friends = ranked.slice(0, Math.min(3, half));
   const enemies = ranked.slice(half).reverse().slice(0, 3);
-  const myOnDevice = list.filter(p => mine.includes(p.id));
+  const myOnDevice = all.filter(p => mine.includes(p.id));
+  const mixedPacks = new Set(myOnDevice.map(p => p.pack)).size > 1;
 
   app.append(
-    h("div", { class: "row", style: "justify-content:space-between" },
-      h("div", {},
-        h("div", { class: "label" }, "Results for"),
-        h("h2", { style: "font-family:var(--marker);font-weight:400", text: me.name })),
+    h("div", { class: "results-head pop" },
+      h("span", { class: "label" }, `${P.icon} ${P.name} results for`),
+      h("span", { class: "who", text: me.name }),
       myOnDevice.length > 1
         ? h("select", { id: "viewing", "aria-label": "Show results for", onchange: e => { state.viewing = e.target.value; render(); } },
-            myOnDevice.map(p => { const o = h("option", { value: p.id, text: p.name }); if (p.id === me.id) o.selected = true; return o; }))
+            myOnDevice.map(p => { const o = h("option", { value: p.id, text: mixedPacks ? `${p.name} (${PACKS[p.pack].name})` : p.name }); if (p.id === me.id) o.selected = true; return o; }))
         : null),
-    statusLine(),
+    statusLine(me.pack),
   );
 
   if (!others.length) {
     app.append(h("section", { class: "card pop" },
-      h("h3", {}, "Waiting for other players"),
-      h("p", { class: "muted" }, "Your answers are saved. As soon as someone else finishes the quiz, your friends and enemies show up here.")));
+      h("h3", {}, "Waiting for more players"),
+      h("p", { class: "muted" }, `Your answers are saved. Pass the phone so someone else can play the ${P.name} pack, and your friends and enemies will show up here.`)));
   } else {
     app.append(
       h("div", { class: "split pop" },
@@ -451,22 +568,22 @@ function renderResults() {
             ? enemies.map(({ p, score }) => matchCard(p, score, enemyStarter(me, p)))
             : h("p", { class: "empty" }, "Need a few more players to find your enemies."))),
       h("section", { class: "card" },
-        h("div", { class: "label" }, `Everyone · ${others.length} ${others.length === 1 ? "player" : "players"}`),
+        h("div", { class: "label" }, `Everyone in ${P.name} · ${others.length} ${others.length === 1 ? "player" : "players"}`),
         h("div", { class: "everyone" }, ranked.map(({ p, score }) => {
           const color = score >= 50 ? "var(--friend)" : "var(--enemy)";
           return h("div", { class: "bar-row" },
             h("span", { class: "n", text: p.name, title: p.name }),
-            h("div", { class: "bar" }, h("span", { style: `width:${score}%;background:${color}` })),
+            h("div", { class: "bar" }, h("span", { style: `width:${score}%;background:${color};box-shadow:0 0 10px ${color}` })),
             h("span", { class: "v" }, score + "%"));
         }))),
     );
   }
 
   app.append(
-    h("div", { class: "row" },
-      h("button", { class: "btn", onclick: () => { state.name = ""; go("home"); } }, "Next player on this device"),
+    h("div", { class: "row center" },
+      h("button", { class: "btn", onclick: () => { state.name = ""; state.pack = me.pack; go("home"); } }, "Next player on this device"),
       h("button", { class: "btn ghost", onclick: () => go("home") }, "Home")),
-    h("p", { class: "note" }, "Scores update live as more people finish. 100% means every answer matched; answers next to each other on the list count as close."),
+    h("p", { class: "note", style: "text-align:center" }, "Scores update as more people finish. 100% means every answer matched."),
   );
 }
 
@@ -481,7 +598,7 @@ function go(screen) { state.screen = screen; confirmingReset = false; render(); 
 // Update only the live parts so typing in the name tag isn't interrupted.
 function refresh() {
   if (state.screen === "home") {
-    const s = document.getElementById("status"); if (s) s.replaceWith(statusLine());
+    const s = document.getElementById("status"); if (s) s.replaceWith(statusLine(state.pack));
     const c = document.getElementById("players-card"); if (c) c.replaceWith(playersCard());
   } else if (state.screen === "results") {
     const y = window.scrollY; render(); window.scrollTo(0, y);
@@ -501,11 +618,9 @@ async function resetGame() {
   refresh();
 }
 
-function switchToLocal(note) {
-  mode = "local"; modeNote = note; canReset = true; loadNote = "";
-}
+function switchToLocal(note) { mode = "local"; modeNote = note; canReset = true; loadNote = ""; }
 
-// ---------- connect to the shared store ----------
+// ---------- shared game (only inside Claude; elsewhere everyone plays on one device) ----------
 let connecting;
 function connect() {
   connecting = (async () => {
@@ -515,10 +630,7 @@ function connect() {
     }
     const [dbNs, userNs] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
     db = dbNs; user = userNs;
-    if (!db) {
-      switchToLocal("Sign in to join the shared game. For now this device keeps its own player list. Pass the phone around.");
-      refresh(); return;
-    }
+    if (!db) { switchToLocal("Everyone plays on this device. Take the quiz, then pass the phone to the next person."); refresh(); return; }
     const canWrite = user ? await user.can("data.write") : null;
     if (canWrite === false) {
       switchToLocal("Your account can view this game but can't add answers to it, so this device keeps its own player list.");
@@ -526,30 +638,175 @@ function connect() {
     }
     mode = "shared";
     canReset = user ? await user.canEdit() : false;
-    loadNote = "";
     const timer = setTimeout(() => { loadNote = "Can't reach the game yet. Players will appear when the connection comes back."; refresh(); }, 10000);
     db.collection("players").onSnapshot(snap => {
       if (!snap.metadata.fromCache) { clearTimeout(timer); loadNote = ""; }
       sharedPlayers = snap.docs.map(d => clean(d.id, d.data())).filter(Boolean).sort((a, b) => a.at - b.at);
       if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
-        // forget this device's players after a host reset
         mine = mine.filter(id => id.startsWith("local-") || sharedPlayers.some(p => p.id === id));
         persist("fe-mine", mine);
       }
       refresh();
-    }, () => {
-      clearTimeout(timer);
-      loadNote = "Lost the connection to the game. Reload the page to reconnect.";
-      refresh();
-    });
+    }, () => { clearTimeout(timer); loadNote = "Lost the connection to the game. Reload the page to reconnect."; refresh(); });
     refresh();
   })();
+}
+
+// ---------- animated night sky ----------
+function startSky() {
+  const c = document.getElementById("bg");
+  const ctx = c.getContext("2d");
+  if (!ctx) return;
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const FLOAT = ["🎃", "👻", "🍬", "🕷️", "💀", "🕸️", "🍭"];
+  let w = 0, hgt = 0, stars = [], bats = [], fogs = [], floaters = [], graves = [], hills = [];
+
+  function resize() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    w = window.innerWidth; hgt = window.innerHeight;
+    c.width = Math.round(w * dpr); c.height = Math.round(hgt * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    build();
+  }
+  function build() {
+    const small = w < 600;
+    stars = Array.from({ length: Math.round((w * hgt) / 7000) }, () => ({
+      x: Math.random() * w, y: Math.random() * hgt * 0.75, r: Math.random() * 1.3 + 0.3, p: Math.random() * 6.28, s: 0.6 + Math.random() * 1.8 }));
+    bats = Array.from({ length: small ? 4 : 7 }, () => newBat(true));
+    fogs = Array.from({ length: 7 }, () => ({ x: Math.random() * w, y: hgt * (0.72 + Math.random() * 0.3), r: 160 + Math.random() * 240, v: (Math.random() < 0.5 ? -1 : 1) * (5 + Math.random() * 10) }));
+    floaters = Array.from({ length: small ? 6 : 10 }, () => newFloater(true));
+    hills = [];
+    for (let x = -40; x <= w + 40; x += 40) hills.push(hgt - 50 - Math.sin(x / 180) * 22 - Math.sin(x / 67) * 8);
+    graves = [];
+    const count = Math.max(4, Math.round(w / 140));
+    for (let i = 0; i < count; i++) {
+      graves.push({ x: (i + 0.3 + Math.random() * 0.4) * (w / count), wd: 18 + Math.random() * 14, ht: 26 + Math.random() * 22, cross: Math.random() < 0.3, tilt: (Math.random() - 0.5) * 0.25 });
+    }
+  }
+  function newBat(anywhere) {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    return { x: anywhere ? Math.random() * w : (dir > 0 ? -50 : w + 50), y: hgt * (0.06 + Math.random() * 0.45), dir,
+             v: 45 + Math.random() * 70, size: 7 + Math.random() * 11, p: Math.random() * 6.28, wob: Math.random() * 6.28 };
+  }
+  function newFloater(anywhere) {
+    return { x: Math.random() * w, y: anywhere ? Math.random() * hgt : hgt + 40, v: 7 + Math.random() * 13, size: 18 + Math.random() * 22,
+             e: FLOAT[Math.floor(Math.random() * FLOAT.length)], p: Math.random() * 6.28, a: 0.12 + Math.random() * 0.16 };
+  }
+
+  function drawMoon(t) {
+    const mx = w * 0.82, my = Math.min(hgt * 0.16, 130), r = Math.max(34, Math.min(70, w * 0.07));
+    const glow = ctx.createRadialGradient(mx, my, r * 0.6, mx, my, r * 4);
+    glow.addColorStop(0, "rgba(255, 228, 170, 0.35)");
+    glow.addColorStop(1, "rgba(255, 228, 170, 0)");
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(mx, my, r * 4, 0, 6.28); ctx.fill();
+    ctx.fillStyle = "#fbefd2"; ctx.beginPath(); ctx.arc(mx, my, r, 0, 6.28); ctx.fill();
+    ctx.fillStyle = "rgba(200, 180, 140, 0.45)";
+    [[-0.3, -0.2, 0.18], [0.25, 0.1, 0.13], [-0.05, 0.35, 0.1], [0.35, -0.35, 0.08]].forEach(([dx, dy, rr]) => {
+      ctx.beginPath(); ctx.arc(mx + dx * r, my + dy * r, rr * r, 0, 6.28); ctx.fill();
+    });
+  }
+  function drawBat(b, t) {
+    const f = Math.sin(t * 13 + b.p);
+    const s = b.size;
+    ctx.save();
+    ctx.translate(b.x, b.y + Math.sin(t * 2 + b.wob) * 8);
+    ctx.scale(b.dir, 1);
+    ctx.fillStyle = "#07030e";
+    ctx.beginPath();
+    ctx.moveTo(0, -s * 0.15);
+    ctx.quadraticCurveTo(-s * 0.7, -s * 0.9 * f - s * 0.2, -s * 1.7, -s * 0.45 * f);
+    ctx.quadraticCurveTo(-s * 1.1, s * 0.05, -s * 0.95, s * 0.4);
+    ctx.quadraticCurveTo(-s * 0.55, s * 0.12, 0, s * 0.35);
+    ctx.quadraticCurveTo(s * 0.55, s * 0.12, s * 0.95, s * 0.4);
+    ctx.quadraticCurveTo(s * 1.1, s * 0.05, s * 1.7, -s * 0.45 * f);
+    ctx.quadraticCurveTo(s * 0.7, -s * 0.9 * f - s * 0.2, 0, -s * 0.15);
+    ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -s * 0.05, s * 0.22, 0, 6.28); ctx.fill();
+    ctx.restore();
+  }
+  function drawGround() {
+    ctx.fillStyle = "#06030c";
+    ctx.beginPath();
+    ctx.moveTo(-40, hgt);
+    hills.forEach((y, i) => ctx.lineTo(-40 + i * 40, y));
+    ctx.lineTo(w + 40, hgt);
+    ctx.closePath(); ctx.fill();
+    graves.forEach(g => {
+      const base = hgt - 50 - Math.sin(g.x / 180) * 22 - Math.sin(g.x / 67) * 8 + 6;
+      ctx.save(); ctx.translate(g.x, base); ctx.rotate(g.tilt);
+      if (g.cross) {
+        ctx.fillRect(-3, -g.ht - 6, 6, g.ht + 6);
+        ctx.fillRect(-g.wd * 0.45, -g.ht * 0.8, g.wd * 0.9, 6);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(-g.wd / 2, 0); ctx.lineTo(-g.wd / 2, -g.ht + g.wd / 2);
+        ctx.arc(0, -g.ht + g.wd / 2, g.wd / 2, Math.PI, 0);
+        ctx.lineTo(g.wd / 2, 0); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    });
+  }
+
+  let last = 0, raf = 0;
+  function frame(now) {
+    const t = now / 1000;
+    const dt = last ? Math.min(0.05, t - last) : 0;
+    last = t;
+    ctx.clearRect(0, 0, w, hgt);
+
+    stars.forEach(s => {
+      const a = reduce ? 0.7 : 0.35 + 0.65 * Math.abs(Math.sin(t * s.s + s.p));
+      ctx.fillStyle = `rgba(255, 244, 220, ${a})`;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28); ctx.fill();
+    });
+    drawMoon(t);
+
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    floaters.forEach((f, i) => {
+      f.y -= f.v * dt;
+      if (f.y < -50) floaters[i] = newFloater(false);
+      ctx.globalAlpha = f.a;
+      ctx.font = `${f.size}px serif`;
+      ctx.fillText(f.e, f.x + Math.sin(t * 0.8 + f.p) * 18, f.y);
+    });
+    ctx.globalAlpha = 1;
+
+    bats.forEach((b, i) => {
+      b.x += b.v * b.dir * dt;
+      if ((b.dir > 0 && b.x > w + 60) || (b.dir < 0 && b.x < -60)) bats[i] = newBat(false);
+      drawBat(b, t);
+    });
+
+    drawGround();
+
+    fogs.forEach(f => {
+      f.x += f.v * dt;
+      if (f.x - f.r > w) f.x = -f.r; else if (f.x + f.r < 0) f.x = w + f.r;
+      const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+      g.addColorStop(0, "rgba(190, 170, 230, 0.10)");
+      g.addColorStop(1, "rgba(190, 170, 230, 0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.28); ctx.fill();
+    });
+
+    if (!reduce) raf = requestAnimationFrame(frame);
+  }
+
+  resize();
+  window.addEventListener("resize", () => { resize(); if (reduce) frame(0); });
+  document.addEventListener("visibilitychange", () => {
+    if (reduce) return;
+    if (document.hidden) cancelAnimationFrame(raf);
+    else { last = 0; raf = requestAnimationFrame(frame); }
+  });
+  if (reduce) frame(0); else raf = requestAnimationFrame(frame);
 }
 
 // ---------- boot ----------
 function boot(data) {
   if (data && data.state) Object.assign(state, data.state);
+  if (!PACKS[state.pack]) state.pack = "halloween";
   render();
+  startSky();
   connect();
 }
 if (window.claude?.hot && typeof window.claude.hot.snapshot === "function") window.claude.hot.snapshot(() => ({ state }));
